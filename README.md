@@ -11,5 +11,6 @@ Open `index.html` directly in any web browser (or serve the directory with `pyth
 ## Features
 
 - Interactive 2D unfolded cube net — click stickers to edit colors or use the move buttons (`A`, `A'`, `T`, `T'`, `L`, `L'`), `Scramble`, and `Reset`
+- Complete mathematical Pocket Cube state validation (sticker counts, chiral corner cubie validity, anchored corner check, and corner twist mod-3 invariant)
 - Anchors the front-right-bottom corner to eliminate whole-cube rotational symmetry
 - Browser-friendly non-blocking bidirectional BFS solver

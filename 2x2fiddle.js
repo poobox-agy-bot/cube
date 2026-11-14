@@ -4,20 +4,184 @@
 // TODO: https://twitter.com/i/status/1593771091738374144 is a better visualization.
 // TODO: make it follow standard notation (URT instead of ALT)
 // TODO: inputs for DFS vs BFS and implement a depth limit for async iterative DFS.
-// TODO: validate dom cube state is viable state (4 of each color, each chusnk is 3 distinct colors) or check each chunk (I did make my state definition intentionally in chunks)
 
 const solvedState = "byrbyoyrgygobrwbowrgwgow";
 
+const COLOR_NAMES = {
+  b: "blue",
+  g: "green",
+  o: "orange",
+  r: "red",
+  w: "white",
+  y: "yellow",
+};
+
+const OPPOSITE_COLOR = {
+  b: "g",
+  g: "b",
+  o: "r",
+  r: "o",
+  w: "y",
+  y: "w",
+};
+
+// Each corner's 3 state indices ordered outward-clockwise starting from its U (yellow) or D (white) facelet.
+const CORNER_SLOTS = [
+  { name: "top-left-back", cw: [1, 2, 0], solved: "yrb" },
+  { name: "top-right-back", cw: [4, 3, 5], solved: "ybo" },
+  { name: "top-left-front", cw: [6, 8, 7], solved: "ygr" },
+  { name: "top-right-front", cw: [9, 11, 10], solved: "yog" },
+  { name: "bottom-left-back", cw: [14, 12, 13], solved: "wbr" },
+  { name: "bottom-right-back", cw: [17, 16, 15], solved: "wob" },
+  { name: "bottom-left-front", cw: [20, 18, 19], solved: "wrg" },
+  { name: "bottom-right-front", cw: [23, 21, 22], solved: "wgo" },
+];
+
+const ANCHORED_CORNER_INDEX = 7; // bottom-right-front
+
+const VALID_CORNER_PIECES = new Set(CORNER_SLOTS.map((s) => s.solved));
+
+function validateCubeState(state) {
+  if (typeof state !== "string" || state.length !== 24) {
+    return { valid: false, reason: "Cube state must contain all 24 stickers." };
+  }
+
+  // 1. Check sticker color counts (4 of each of the 6 colors)
+  const counts = { b: 0, g: 0, o: 0, r: 0, w: 0, y: 0 };
+  for (const ch of state) {
+    if (!(ch in counts)) {
+      return { valid: false, reason: "Unknown sticker color '" + ch + "'." };
+    }
+    counts[ch]++;
+  }
+  const wrongCounts = Object.entries(counts)
+    .filter(([, count]) => count !== 4)
+    .map(([ch, count]) => count + " " + COLOR_NAMES[ch]);
+  if (wrongCounts.length > 0) {
+    return {
+      valid: false,
+      reason: "Invalid sticker counts (need 4 of each color): " + wrongCounts.join(", ") + ".",
+    };
+  }
+
+  // 2. Check anchored corner remains solved
+  const anchor = CORNER_SLOTS[ANCHORED_CORNER_INDEX];
+  const anchorTri = anchor.cw.map((idx) => state[idx]).join("");
+  if (anchorTri !== anchor.solved) {
+    return {
+      valid: false,
+      reason: "Anchored corner (" + anchor.name + ") must remain in its solved orientation.",
+    };
+  }
+
+  // 3. Check each corner is a valid, distinct physical cubie with right-handed chirality
+  const seenPieces = new Map();
+  let twistSum = 0;
+
+  for (const slot of CORNER_SLOTS) {
+    const tri = slot.cw.map((idx) => state[idx]).join("");
+    const uniqueColors = new Set(tri);
+    if (uniqueColors.size !== 3) {
+      return {
+        valid: false,
+        reason: "Invalid corner at " + slot.name + ": contains duplicate color stickers.",
+      };
+    }
+    for (const ch of tri) {
+      if (uniqueColors.has(OPPOSITE_COLOR[ch])) {
+        return {
+          valid: false,
+          reason:
+            "Invalid corner at " +
+            slot.name +
+            ": opposite colors (" +
+            COLOR_NAMES[ch] +
+            " & " +
+            COLOR_NAMES[OPPOSITE_COLOR[ch]] +
+            ") cannot share a corner.",
+        };
+      }
+    }
+
+    // Exactly one sticker on a valid corner is yellow ('y') or white ('w')
+    let twist = -1;
+    for (let t = 0; t < 3; t++) {
+      if (tri[t] === "y" || tri[t] === "w") {
+        twist = t;
+        break;
+      }
+    }
+    const canonical = tri.slice(twist) + tri.slice(0, twist);
+    if (!VALID_CORNER_PIECES.has(canonical)) {
+      return {
+        valid: false,
+        reason:
+          "Invalid corner at " +
+          slot.name +
+          ": stickers have mirrored (impossible) chirality.",
+      };
+    }
+    if (seenPieces.has(canonical)) {
+      return {
+        valid: false,
+        reason:
+          "Duplicate corner piece (" +
+          [...canonical].map((c) => COLOR_NAMES[c]).join("/") +
+          ") at " +
+          seenPieces.get(canonical) +
+          " and " +
+          slot.name +
+          ".",
+      };
+    }
+    seenPieces.set(canonical, slot.name);
+    twistSum += twist;
+  }
+
+  // 4. Corner orientation invariant: sum of clockwise twists mod 3 must be 0
+  if (twistSum % 3 !== 0) {
+    return {
+      valid: false,
+      reason:
+        "Unsolvable corner twist: total corner orientation (" +
+        twistSum +
+        " mod 3 != 0) is impossible by legal moves.",
+    };
+  }
+
+  return { valid: true, reason: "Valid cube state." };
+}
+
 function toggleColor(cell) {
   // function for modifying the starting position of the cube.
+  cancelActiveSearch();
   const classes = cell.classList;
-  if (classes.replace("yellow", "blue")) return;
-  if (classes.replace("blue", "green")) return;
-  if (classes.replace("green", "orange")) return;
-  if (classes.replace("orange", "red")) return;
-  if (classes.replace("red", "white")) return;
-  if (classes.replace("white", "yellow")) return;
+  if (classes.replace("yellow", "blue")) {
+    refreshValidationStatus();
+    return;
+  }
+  if (classes.replace("blue", "green")) {
+    refreshValidationStatus();
+    return;
+  }
+  if (classes.replace("green", "orange")) {
+    refreshValidationStatus();
+    return;
+  }
+  if (classes.replace("orange", "red")) {
+    refreshValidationStatus();
+    return;
+  }
+  if (classes.replace("red", "white")) {
+    refreshValidationStatus();
+    return;
+  }
+  if (classes.replace("white", "yellow")) {
+    refreshValidationStatus();
+    return;
+  }
   classes.add("white");
+  refreshValidationStatus();
 }
 
 function cellColor(cell) {
@@ -110,10 +274,12 @@ function stateToDomCube(state) {
   setCellColorChar(f.front.children[3], brf[0]);
   setCellColorChar(f.right.children[2], brf[1]);
   setCellColorChar(f.bottom.children[1], brf[2]);
+  refreshValidationStatus();
 }
 
 var countElement;
 var solutionElement;
+var validationElement;
 var stop = false;
 var activeTimers = [];
 
@@ -124,6 +290,15 @@ function cancelActiveSearch() {
   }
 }
 
+function refreshValidationStatus() {
+  if (!domCube || !validationElement) return { valid: true, reason: "" };
+  const check = validateCubeState(domCubeToState());
+  validationElement.textContent = check.reason;
+  validationElement.classList.toggle("valid", check.valid);
+  validationElement.classList.toggle("invalid", !check.valid);
+  return check;
+}
+
 function init() {
   document.getElementById("stopButton").addEventListener("click", () => {
     cancelActiveSearch();
@@ -131,6 +306,8 @@ function init() {
   domCube = document.getElementById("startCube");
   countElement = document.getElementById("counter");
   solutionElement = document.getElementById("solution");
+  validationElement = document.getElementById("validationStatus");
+  refreshValidationStatus();
 }
 
 function updateCount(count) {
@@ -554,6 +731,12 @@ function runTest() {
   stop = false;
 
   var state = domCubeToState();
+  const check = refreshValidationStatus();
+  if (!check.valid) {
+    updateCount(0);
+    showSolution("Cannot solve: " + check.reason);
+    return;
+  }
 
   updateCount(0);
   showSolution("");

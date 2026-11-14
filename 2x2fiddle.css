@@ -46,6 +46,18 @@ body {
   font-size: 0.95rem;
 }
 
+#validationStatus {
+  font-weight: 500;
+}
+
+#validationStatus.valid {
+  color: #15803d;
+}
+
+#validationStatus.invalid {
+  color: #b91c1c;
+}
+
 #solution {
   font-weight: 600;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
