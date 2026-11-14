@@ -10,6 +10,35 @@ body {
   margin: 0 auto;
 }
 
+.puzzle-nav {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.nav-link {
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #374151;
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+}
+
+.nav-link:hover {
+  background: #e5e7eb;
+}
+
+.nav-link.active {
+  background: #1d4ed8;
+  color: #ffffff;
+  border-color: #1d4ed8;
+}
+
 .app h1 {
   font-size: 1.4rem;
   margin: 0 0 12px;

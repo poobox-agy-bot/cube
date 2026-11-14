@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>3x3 Rubik's Cube Solver</title>
+  <link rel="stylesheet" href="3x3.css">
+</head>
+<body>
+  <main class="app">
+    <nav class="puzzle-nav" aria-label="Cube size">
+      <a href="index.html" class="nav-link">2&times;2 Pocket Cube</a>
+      <a href="3x3.html" class="nav-link active">3&times;3 Rubik's Cube</a>
+    </nav>
+
+    <h1>3&times;3 Rubik's Cube Solver (Kociemba Two-Phase)</h1>
+
+    <div class="controls">
+      <button id="solveBtn" onclick="runSolve()">Solve</button>
+      <button id="stopBtn" onclick="cancelSolve()">Stop</button>
+      <button onclick="scramble3x3()">Scramble (25 moves)</button>
+      <button onclick="reset3x3()">Reset</button>
+      <label class="control-field" for="viewMode3x3">
+        View:
+        <select id="viewMode3x3" onchange="onViewMode3x3Change()">
+          <option value="both">3D + 2D Net</option>
+          <option value="3d">3D Cube Only</option>
+          <option value="2d">2D Net Only</option>
+        </select>
+      </label>
+      <button onclick="resetCamera3x3()" title="Reset 3D camera angle">Reset View</button>
+    </div>
+
+    <div class="status">
+      <label id="validation3x3" class="valid">Valid 3&times;3 cube state.</label>
+      <label id="solverStatus3x3">Ready (Kociemba Two-Phase IDA* solver).</label>
+      <label id="solution3x3"></label>
+    </div>
+
+    <div class="playback-bar hidden" id="playbackBar3x3">
+      <button onclick="step3x3Start()" title="Jump to scrambled start">|&lt;</button>
+      <button onclick="step3x3Prev()" title="Previous move">&lt; Prev</button>
+      <button id="playPauseBtn3x3" onclick="toggle3x3Playback()">Play</button>
+      <button onclick="step3x3Next()" title="Next move">Next &gt;</button>
+      <button onclick="step3x3End()" title="Jump to solved state">&gt;|</button>
+      <span id="playbackStepLabel3x3" class="playback-step-label">Step 0 / 0</span>
+    </div>
+
+    <div class="workspace-views">
+      <div class="cube3d-panel" id="cube3dPanel3x3">
+        <div class="cube3d-stage" id="cube3dStage3x3">
+          <div class="cube3d" id="cube3d3x3"></div>
+        </div>
+        <div class="cube3d-hint">Drag to orbit 3D cube &bull; click non-center stickers to cycle color</div>
+      </div>
+
+      <div class="cube-net" id="net3x3"></div>
+    </div>
+
+    <div class="moves-section">
+      <div class="moves-group">
+        <button onclick="applyManualMove('U')">U</button>
+        <button onclick="applyManualMove(&quot;U'&quot;)">U'</button>
+        <button onclick="applyManualMove('U2')">U2</button>
+        <button onclick="applyManualMove('R')">R</button>
+        <button onclick="applyManualMove(&quot;R'&quot;)">R'</button>
+        <button onclick="applyManualMove('R2')">R2</button>
+        <button onclick="applyManualMove('F')">F</button>
+        <button onclick="applyManualMove(&quot;F'&quot;)">F'</button>
+        <button onclick="applyManualMove('F2')">F2</button>
+      </div>
+      <div class="moves-group">
+        <button onclick="applyManualMove('D')">D</button>
+        <button onclick="applyManualMove(&quot;D'&quot;)">D'</button>
+        <button onclick="applyManualMove('D2')">D2</button>
+        <button onclick="applyManualMove('L')">L</button>
+        <button onclick="applyManualMove(&quot;L'&quot;)">L'</button>
+        <button onclick="applyManualMove('L2')">L2</button>
+        <button onclick="applyManualMove('B')">B</button>
+        <button onclick="applyManualMove(&quot;B'&quot;)">B'</button>
+        <button onclick="applyManualMove('B2')">B2</button>
+      </div>
+    </div>
+  </main>
+
+  <script src="3x3.js"></script>
+</body>
+</html>
