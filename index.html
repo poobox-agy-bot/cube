@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>2x2 Rubik's Cube Solver</title>
+  <link rel="stylesheet" href="2x2fiddle.css">
+</head>
+<body>
+  <main class="app">
+    <h1>2&times;2 Rubik's Cube Solver</h1>
+
+    <div class="controls">
+      <button onclick="runTest()">Run</button>
+      <button id="stopButton">Stop</button>
+      <button onclick="scrambleCube()">Scramble</button>
+      <button onclick="resetCube()">Reset</button>
+    </div>
+    <div class="status">
+      <label id="counter">searched 0 unique states.</label>
+      <label id="solution"></label>
+    </div>
+
+    <div class="cube" id="startCube">
+      <div></div>
+      <div class="face back" title="back side of cube">
+        <button class="cell blue" onclick="toggleColor(this)"> </button>
+        <button class="cell blue" onclick="toggleColor(this)"> </button>
+        <button class="cell blue" onclick="toggleColor(this)"> </button>
+        <button class="cell blue" onclick="toggleColor(this)"> </button>
+      </div>
+      <div></div>
+      <div></div>
+      <div class="face top" title="top side of cube">
+        <button class="cell yellow" onclick="toggleColor(this)"> </button>
+        <button class="cell yellow" onclick="toggleColor(this)"> </button>
+        <button class="cell yellow" onclick="toggleColor(this)"> </button>
+        <button class="cell yellow" onclick="toggleColor(this)"> </button>
+      </div>
+      <div></div>
+      <div class="face left" title="left side of cube">
+        <button class="cell red" onclick="toggleColor(this)"> </button>
+        <button class="cell red" onclick="toggleColor(this)"> </button>
+        <button class="cell red" onclick="toggleColor(this)"> </button>
+        <button class="cell red" onclick="toggleColor(this)"> </button>
+      </div>
+      <div class="face front" title="front side of cube">
+        <button class="cell green" onclick="toggleColor(this)"> </button>
+        <button class="cell green" onclick="toggleColor(this)"> </button>
+        <button class="cell green" onclick="toggleColor(this)"> </button>
+        <button class="cell green fixed-cell" title="anchored corner"> </button>
+      </div>
+      <div class="face right" title="right side of cube">
+        <button class="cell orange" onclick="toggleColor(this)"> </button>
+        <button class="cell orange" onclick="toggleColor(this)"> </button>
+        <button class="cell orange fixed-cell" title="anchored corner"> </button>
+        <button class="cell orange" onclick="toggleColor(this)"> </button>
+      </div>
+      <div></div>
+      <div class="face bottom" title="bottom side of cube">
+        <button class="cell white" onclick="toggleColor(this)"> </button>
+        <button class="cell white fixed-cell" title="anchored corner"> </button>
+        <button class="cell white" onclick="toggleColor(this)"> </button>
+        <button class="cell white" onclick="toggleColor(this)"> </button>
+      </div>
+      <div></div>
+    </div>
+
+    <div class="moves">
+      <button id="A" onclick="A()" title="rotate back side of cube clockwise">A</button>
+      <button id="Ap" onclick="Ap()" title="rotate back side of cube anticlockwise">A'</button>
+      <button id="T" onclick="T()" title="rotate top side of cube clockwise">T</button>
+      <button id="Tp" onclick="Tp()" title="rotate top side of cube anticlockwise">T'</button>
+      <button id="L" onclick="L()" title="rotate left side of cube clockwise">L</button>
+      <button id="Lp" onclick="Lp()" title="rotate left side of cube anticlockwise">L'</button>
+    </div>
+  </main>
+
+  <script src="2x2fiddle.js"></script>
+</body>
+</html>

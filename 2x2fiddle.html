@@ -1,11 +1,13 @@
-<button onclick="runTest()">
-  Run
-</button>
-<button id="stopButton">
-  Stop
-</button>
-<label id="counter">searched 0 states.</label>
-<label id="solution"></label>
+<div class="controls">
+  <button onclick="runTest()">Run</button>
+  <button id="stopButton">Stop</button>
+  <button onclick="scrambleCube()">Scramble</button>
+  <button onclick="resetCube()">Reset</button>
+</div>
+<div class="status">
+  <label id="counter">searched 0 unique states.</label>
+  <label id="solution"></label>
+</div>
 
 <div class="cube" id="startCube">
   <div></div>
@@ -34,27 +36,29 @@
     <button class="cell green" onclick="toggleColor(this)"> </button>
     <button class="cell green" onclick="toggleColor(this)"> </button>
     <button class="cell green" onclick="toggleColor(this)"> </button>
-    <button class="cell green"> </button>
+    <button class="cell green fixed-cell" title="anchored corner"> </button>
   </div>
   <div class="face right" title="right side of cube">
     <button class="cell orange" onclick="toggleColor(this)"> </button>
     <button class="cell orange" onclick="toggleColor(this)"> </button>
-    <button class="cell orange"> </button>
+    <button class="cell orange fixed-cell" title="anchored corner"> </button>
     <button class="cell orange" onclick="toggleColor(this)"> </button>
   </div>
   <div></div>
   <div class="face bottom" title="bottom side of cube">
     <button class="cell white" onclick="toggleColor(this)"> </button>
-    <button class="cell white"> </button>
+    <button class="cell white fixed-cell" title="anchored corner"> </button>
     <button class="cell white" onclick="toggleColor(this)"> </button>
     <button class="cell white" onclick="toggleColor(this)"> </button>
   </div>
   <div></div>
 </div>
 
-<button id="A" onclick="A()" title="rotate back side of cube clockwise">A</button>
-<button id="Ap" onclick="Ap()" title="rotate back side of cube anticlockwise">A'</button>
-<button id="T" onclick="T()" title="rotate top side of cube clockwise">T</button>
-<button id="Tp" onclick="Tp()" title="rotate top side of cube anticlockwise">T'</button>
-<button id="L" onclick="L()" title="rotate left side of cube clockwise">L</button>
-<button id="Lp" onclick="Lp()" title="rotate left side of cube anticlockwise">L'</button>
+<div class="moves">
+  <button id="A" onclick="A()" title="rotate back side of cube clockwise">A</button>
+  <button id="Ap" onclick="Ap()" title="rotate back side of cube anticlockwise">A'</button>
+  <button id="T" onclick="T()" title="rotate top side of cube clockwise">T</button>
+  <button id="Tp" onclick="Tp()" title="rotate top side of cube anticlockwise">T'</button>
+  <button id="L" onclick="L()" title="rotate left side of cube clockwise">L</button>
+  <button id="Lp" onclick="Lp()" title="rotate left side of cube anticlockwise">L'</button>
+</div>
