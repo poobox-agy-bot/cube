@@ -1,8 +1,6 @@
 // in our 2x2 solved cube: blue is opposite green, orange is opp red, white is opp yellow.
 // looking at the green face, adjacent colors going clockwise are: y, o, w, r
 
-// TODO: https://twitter.com/i/status/1593771091738374144 is a better visualization.
-
 const solvedState = "byrbyoyrgygobrwbowrgwgow";
 
 const COLOR_NAMES = {
@@ -155,30 +153,37 @@ function toggleColor(cell) {
   cancelActiveSearch();
   const classes = cell.classList;
   if (classes.replace("yellow", "blue")) {
+    sync3DCube();
     refreshValidationStatus();
     return;
   }
   if (classes.replace("blue", "green")) {
+    sync3DCube();
     refreshValidationStatus();
     return;
   }
   if (classes.replace("green", "orange")) {
+    sync3DCube();
     refreshValidationStatus();
     return;
   }
   if (classes.replace("orange", "red")) {
+    sync3DCube();
     refreshValidationStatus();
     return;
   }
   if (classes.replace("red", "white")) {
+    sync3DCube();
     refreshValidationStatus();
     return;
   }
   if (classes.replace("white", "yellow")) {
+    sync3DCube();
     refreshValidationStatus();
     return;
   }
   classes.add("white");
+  sync3DCube();
   refreshValidationStatus();
 }
 
@@ -272,14 +277,251 @@ function stateToDomCube(state) {
   setCellColorChar(f.front.children[3], brf[0]);
   setCellColorChar(f.right.children[2], brf[1]);
   setCellColorChar(f.bottom.children[1], brf[2]);
+  sync3DCube();
   refreshValidationStatus();
 }
 
 var countElement;
 var solutionElement;
 var validationElement;
+var cube3dElement;
 var stop = false;
 var activeTimers = [];
+
+// 3D Orbit Camera state (default shows U, F, R clearly)
+var camRotX = -28;
+var camRotY = -38;
+var cells3dByFace = {};
+
+// Solution playback state
+var playbackStates = [];
+var playbackMoves = [];
+var playbackIndex = 0;
+var playbackTimer = null;
+
+function stopPlayback() {
+  if (playbackTimer !== null) {
+    clearInterval(playbackTimer);
+    playbackTimer = null;
+  }
+  const btn = document.getElementById("playPauseBtn");
+  if (btn) btn.textContent = "Play";
+}
+
+function clearPlayback() {
+  stopPlayback();
+  playbackStates = [];
+  playbackMoves = [];
+  playbackIndex = 0;
+  const bar = document.getElementById("playbackBar");
+  if (bar) bar.classList.add("hidden");
+}
+
+function setupPlayback(initialState, solutionStr) {
+  stopPlayback();
+  const bar = document.getElementById("playbackBar");
+  if (!bar || !solutionStr) {
+    clearPlayback();
+    return;
+  }
+  const moveMap = Object.fromEntries(SOLVER_MOVES.map((m) => [m.name, m.fn]));
+  const tokens = solutionStr.trim().split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) {
+    clearPlayback();
+    return;
+  }
+  playbackMoves = tokens;
+  playbackStates = [initialState];
+  let cur = initialState;
+  for (const tok of tokens) {
+    cur = moveMap[tok](cur);
+    playbackStates.push(cur);
+  }
+  playbackIndex = 0;
+  bar.classList.remove("hidden");
+  updatePlaybackLabel();
+}
+
+function updatePlaybackLabel() {
+  const lbl = document.getElementById("playbackStepLabel");
+  if (!lbl || playbackMoves.length === 0) return;
+  if (playbackIndex === 0) {
+    lbl.textContent = "Step 0 / " + playbackMoves.length + " (start)";
+  } else {
+    lbl.textContent =
+      "Step " +
+      playbackIndex +
+      " / " +
+      playbackMoves.length +
+      " (" +
+      playbackMoves[playbackIndex - 1] +
+      ")";
+  }
+}
+
+function applyPlaybackStep(idx) {
+  if (playbackStates.length === 0) return;
+  playbackIndex = Math.max(0, Math.min(playbackStates.length - 1, idx));
+  stateToDomCube(playbackStates[playbackIndex]);
+  updatePlaybackLabel();
+}
+
+function stepToStart() {
+  stopPlayback();
+  applyPlaybackStep(0);
+}
+
+function stepBackward() {
+  stopPlayback();
+  applyPlaybackStep(playbackIndex - 1);
+}
+
+function stepForward() {
+  stopPlayback();
+  applyPlaybackStep(playbackIndex + 1);
+}
+
+function stepToEnd() {
+  stopPlayback();
+  applyPlaybackStep(playbackStates.length - 1);
+}
+
+function togglePlayback() {
+  if (playbackStates.length === 0) return;
+  if (playbackTimer !== null) {
+    stopPlayback();
+    return;
+  }
+  if (playbackIndex >= playbackStates.length - 1) {
+    applyPlaybackStep(0);
+  }
+  const btn = document.getElementById("playPauseBtn");
+  if (btn) btn.textContent = "Pause";
+  playbackTimer = setInterval(() => {
+    if (playbackIndex < playbackStates.length - 1) {
+      applyPlaybackStep(playbackIndex + 1);
+    } else {
+      stopPlayback();
+    }
+  }, 450);
+}
+
+function build3DCube() {
+  cube3dElement = document.getElementById("cube3d");
+  const stage = document.getElementById("cube3dStage");
+  if (!cube3dElement || !stage || !domCube) return;
+
+  let dragging = false;
+  let dragMoved = false;
+  let startX = 0;
+  let startY = 0;
+  let baseRotX = camRotX;
+  let baseRotY = camRotY;
+
+  cube3dElement.innerHTML = "";
+  cells3dByFace = {};
+  const faces2d = getDomFaces();
+  const faceNames = ["back", "top", "left", "front", "right", "bottom"];
+
+  for (const fname of faceNames) {
+    const faceDiv = document.createElement("div");
+    faceDiv.className = "face3d " + fname;
+    cells3dByFace[fname] = [];
+
+    for (let i = 0; i < 4; i++) {
+      const cell2d = faces2d[fname].children[i];
+      const btn3d = document.createElement("button");
+      btn3d.type = "button";
+      btn3d.className = "cell3d";
+      if (cell2d.classList.contains("fixed-cell")) {
+        btn3d.classList.add("fixed-cell");
+        btn3d.title = cell2d.title || "Anchored corner";
+      } else {
+        btn3d.title = "Click to cycle sticker color";
+        btn3d.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          if (dragMoved) return;
+          clearPlayback();
+          toggleColor(cell2d);
+        });
+      }
+      faceDiv.appendChild(btn3d);
+      cells3dByFace[fname].push(btn3d);
+    }
+    cube3dElement.appendChild(faceDiv);
+  }
+
+  stage.addEventListener("pointerdown", (e) => {
+    dragging = true;
+    dragMoved = false;
+    startX = e.clientX;
+    startY = e.clientY;
+    baseRotX = camRotX;
+    baseRotY = camRotY;
+    cube3dElement.classList.add("dragging");
+  });
+
+  window.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+      dragMoved = true;
+    }
+    camRotY = baseRotY + dx * 0.65;
+    camRotX = Math.max(-85, Math.min(85, baseRotX - dy * 0.65));
+    applyCameraTransform();
+  });
+
+  window.addEventListener("pointerup", () => {
+    if (!dragging) return;
+    dragging = false;
+    cube3dElement.classList.remove("dragging");
+  });
+
+  applyCameraTransform();
+  sync3DCube();
+}
+
+function applyCameraTransform() {
+  if (!cube3dElement) return;
+  cube3dElement.style.transform =
+    "rotateX(" + camRotX + "deg) rotateY(" + camRotY + "deg)";
+}
+
+function resetCamera() {
+  camRotX = -28;
+  camRotY = -38;
+  applyCameraTransform();
+}
+
+function onViewModeChange() {
+  const sel = document.getElementById("viewModeSelect");
+  const panel3d = document.getElementById("cube3dPanel");
+  if (!sel || !panel3d || !domCube) return;
+  const mode = sel.value;
+  panel3d.classList.toggle("hidden", mode === "2d");
+  domCube.classList.toggle("hidden", mode === "3d");
+}
+
+function sync3DCube() {
+  if (!cube3dElement || !domCube) return;
+  const faces2d = getDomFaces();
+  const colorClasses = ["blue", "green", "orange", "red", "white", "yellow"];
+  for (const fname of Object.keys(cells3dByFace)) {
+    for (let i = 0; i < 4; i++) {
+      const c2 = faces2d[fname].children[i];
+      const c3 = cells3dByFace[fname][i];
+      c3.classList.remove(...colorClasses);
+      for (const col of colorClasses) {
+        if (c2.classList.contains(col)) {
+          c3.classList.add(col);
+          break;
+        }
+      }
+    }
+  }
+}
 
 function cancelActiveSearch() {
   stop = true;
@@ -305,7 +547,9 @@ function init() {
   countElement = document.getElementById("counter");
   solutionElement = document.getElementById("solution");
   validationElement = document.getElementById("validationStatus");
+  build3DCube();
   onAlgorithmChange();
+  onViewModeChange();
   refreshValidationStatus();
 }
 
@@ -330,43 +574,53 @@ function showSolution(path) {
 
 function U() {
   cancelActiveSearch();
+  clearPlayback();
   stateToDomCube(rotateTopClock(domCubeToState()));
 }
 function Up() {
   cancelActiveSearch();
+  clearPlayback();
   stateToDomCube(rotateTopAnti(domCubeToState()));
 }
 function U2() {
   cancelActiveSearch();
+  clearPlayback();
   stateToDomCube(rotateTopHalf(domCubeToState()));
 }
 function R() {
   cancelActiveSearch();
+  clearPlayback();
   stateToDomCube(rotateRightClock(domCubeToState()));
 }
 function Rp() {
   cancelActiveSearch();
+  clearPlayback();
   stateToDomCube(rotateRightAnti(domCubeToState()));
 }
 function R2() {
   cancelActiveSearch();
+  clearPlayback();
   stateToDomCube(rotateRightHalf(domCubeToState()));
 }
 function F() {
   cancelActiveSearch();
+  clearPlayback();
   stateToDomCube(rotateFrontClock(domCubeToState()));
 }
 function Fp() {
   cancelActiveSearch();
+  clearPlayback();
   stateToDomCube(rotateFrontAnti(domCubeToState()));
 }
 function F2() {
   cancelActiveSearch();
+  clearPlayback();
   stateToDomCube(rotateFrontHalf(domCubeToState()));
 }
 
 function resetCube() {
   cancelActiveSearch();
+  clearPlayback();
   stateToDomCube(solvedState);
   updateCount(0);
   showSolution("");
@@ -374,6 +628,7 @@ function resetCube() {
 
 function scrambleCube(steps = 11) {
   cancelActiveSearch();
+  clearPlayback();
   let state = solvedState;
   let lastFace = "";
   for (let i = 0; i < steps; i++) {
@@ -864,6 +1119,7 @@ function formatSolutionResult(result, elapsed, maxDepth, usedDepthBound) {
 
 function runTest() {
   cancelActiveSearch();
+  clearPlayback();
   stop = false;
 
   var state = domCubeToState();
@@ -885,6 +1141,9 @@ function runTest() {
     const elapsed = new Date().getTime() - startTime.getTime();
     const usedDepthBound = algorithm === "iddfs" || algorithm === "dfs";
     showSolution(formatSolutionResult(result, elapsed, maxDepth, usedDepthBound));
+    if (result) {
+      setupPlayback(state, result);
+    }
     stop = false;
   };
 

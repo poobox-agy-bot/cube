@@ -6,7 +6,7 @@ body {
 }
 
 .app {
-  max-width: 720px;
+  max-width: 900px;
   margin: 0 auto;
 }
 
@@ -51,7 +51,8 @@ body {
 }
 
 .controls button,
-.moves button {
+.moves button,
+.playback-bar button {
   padding: 6px 12px;
   border-radius: 5px;
   border: 1px solid #9ca3af;
@@ -61,8 +62,133 @@ body {
 }
 
 .controls button:hover,
-.moves button:hover {
+.moves button:hover,
+.playback-bar button:hover {
   background: #f3f4f6;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.playback-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+}
+
+.playback-step-label {
+  font-size: 0.9rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  margin-left: 6px;
+  color: #1e3a8a;
+}
+
+.workspace-views {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 28px;
+  margin: 12px 0;
+}
+
+.cube3d-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.cube3d-stage {
+  --cube-size: 164px;
+  --half-size: 82px;
+  width: 250px;
+  height: 250px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 680px;
+  border-radius: 10px;
+  background: radial-gradient(circle at 30% 25%, #ffffff, #e5e7eb);
+  border: 1px solid #d1d5db;
+  user-select: none;
+  touch-action: none;
+  cursor: grab;
+}
+
+.cube3d-stage:active {
+  cursor: grabbing;
+}
+
+.cube3d {
+  width: var(--cube-size);
+  height: var(--cube-size);
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 90ms ease-out;
+}
+
+.cube3d.dragging {
+  transition: none;
+}
+
+.face3d {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 6px;
+  padding: 7px;
+  box-sizing: border-box;
+  background: #111827;
+  border-radius: 8px;
+  backface-visibility: hidden;
+}
+
+.face3d.front {
+  transform: translateZ(var(--half-size));
+}
+.face3d.back {
+  transform: rotateX(180deg) translateZ(var(--half-size));
+}
+.face3d.top {
+  transform: rotateX(90deg) translateZ(var(--half-size));
+}
+.face3d.bottom {
+  transform: rotateX(-90deg) translateZ(var(--half-size));
+}
+.face3d.right {
+  transform: rotateY(90deg) translateZ(var(--half-size));
+}
+.face3d.left {
+  transform: rotateY(-90deg) translateZ(var(--half-size));
+}
+
+.cell3d {
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+  border: 1px solid rgba(17, 24, 39, 0.55);
+  cursor: pointer;
+  padding: 0;
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.35);
+}
+
+.cell3d.fixed-cell {
+  cursor: default;
+  box-shadow: inset 0 0 0 3px rgba(17, 24, 39, 0.45);
+}
+
+.cube3d-hint {
+  font-size: 0.8rem;
+  color: #4b5563;
 }
 
 .status {

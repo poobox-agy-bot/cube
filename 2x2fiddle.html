@@ -16,14 +16,39 @@
     Max Depth:
     <input id="maxDepthInput" type="number" min="1" max="20" value="11" disabled>
   </label>
+  <label class="control-field" for="viewModeSelect">
+    View:
+    <select id="viewModeSelect" onchange="onViewModeChange()">
+      <option value="both">3D + 2D Net</option>
+      <option value="3d">3D Cube Only</option>
+      <option value="2d">2D Net Only</option>
+    </select>
+  </label>
+  <button onclick="resetCamera()" title="Reset 3D camera angle">Reset View</button>
 </div>
 <div class="status">
   <label id="validationStatus" class="valid">Valid cube state.</label>
   <label id="counter">searched 0 unique states.</label>
   <label id="solution"></label>
 </div>
+<div class="playback-bar hidden" id="playbackBar">
+  <button onclick="stepToStart()" title="Jump to scrambled start">|&lt;</button>
+  <button onclick="stepBackward()" title="Previous move">&lt; Prev</button>
+  <button id="playPauseBtn" onclick="togglePlayback()">Play</button>
+  <button onclick="stepForward()" title="Next move">Next &gt;</button>
+  <button onclick="stepToEnd()" title="Jump to solved state">&gt;|</button>
+  <span id="playbackStepLabel" class="playback-step-label">Step 0 / 0</span>
+</div>
 
-<div class="cube" id="startCube">
+<div class="workspace-views" id="workspaceViews">
+  <div class="cube3d-panel" id="cube3dPanel">
+    <div class="cube3d-stage" id="cube3dStage">
+      <div class="cube3d" id="cube3d"></div>
+    </div>
+    <div class="cube3d-hint">Drag to orbit 3D cube &bull; click any unanchored sticker to cycle color</div>
+  </div>
+
+  <div class="cube" id="startCube">
   <div></div>
   <div class="face back" title="Back (B) face">
     <button class="cell blue fixed-cell" title="anchored DLB corner"> </button>
@@ -66,6 +91,7 @@
     <button class="cell white" onclick="toggleColor(this)"> </button>
   </div>
   <div></div>
+  </div>
 </div>
 
 <div class="moves">
