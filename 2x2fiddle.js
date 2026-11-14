@@ -2,7 +2,6 @@
 // looking at the green face, adjacent colors going clockwise are: y, o, w, r
 
 // TODO: https://twitter.com/i/status/1593771091738374144 is a better visualization.
-// TODO: make it follow standard notation (URT instead of ALT)
 // TODO: inputs for DFS vs BFS and implement a depth limit for async iterative DFS.
 
 const solvedState = "byrbyoyrgygobrwbowrgwgow";
@@ -37,7 +36,7 @@ const CORNER_SLOTS = [
   { name: "bottom-right-front", cw: [23, 21, 22], solved: "wgo" },
 ];
 
-const ANCHORED_CORNER_INDEX = 7; // bottom-right-front
+const ANCHORED_CORNER_INDEX = 4; // bottom-left-back (DLB), fixed under <U, R, F>
 
 const VALID_CORNER_PIECES = new Set(CORNER_SLOTS.map((s) => s.solved));
 
@@ -320,29 +319,41 @@ function showSolution(path) {
   solutionElement.textContent = path;
 }
 
-function T() {
+function U() {
   cancelActiveSearch();
   stateToDomCube(rotateTopClock(domCubeToState()));
 }
-function Tp() {
+function Up() {
   cancelActiveSearch();
   stateToDomCube(rotateTopAnti(domCubeToState()));
 }
-function L() {
+function U2() {
   cancelActiveSearch();
-  stateToDomCube(rotateLeftClock(domCubeToState()));
+  stateToDomCube(rotateTopHalf(domCubeToState()));
 }
-function Lp() {
+function R() {
   cancelActiveSearch();
-  stateToDomCube(rotateLeftAnti(domCubeToState()));
+  stateToDomCube(rotateRightClock(domCubeToState()));
 }
-function A() {
+function Rp() {
   cancelActiveSearch();
-  stateToDomCube(rotateBackClock(domCubeToState()));
+  stateToDomCube(rotateRightAnti(domCubeToState()));
 }
-function Ap() {
+function R2() {
   cancelActiveSearch();
-  stateToDomCube(rotateBackAnti(domCubeToState()));
+  stateToDomCube(rotateRightHalf(domCubeToState()));
+}
+function F() {
+  cancelActiveSearch();
+  stateToDomCube(rotateFrontClock(domCubeToState()));
+}
+function Fp() {
+  cancelActiveSearch();
+  stateToDomCube(rotateFrontAnti(domCubeToState()));
+}
+function F2() {
+  cancelActiveSearch();
+  stateToDomCube(rotateFrontHalf(domCubeToState()));
 }
 
 function resetCube() {
@@ -352,26 +363,15 @@ function resetCube() {
   showSolution("");
 }
 
-function scrambleCube(steps = 14) {
+function scrambleCube(steps = 11) {
   cancelActiveSearch();
-  const moveFns = [
-    rotateBackClock,
-    rotateBackAnti,
-    rotateTopClock,
-    rotateTopAnti,
-    rotateLeftClock,
-    rotateLeftAnti,
-  ];
   let state = solvedState;
-  let lastFace = -1;
+  let lastFace = "";
   for (let i = 0; i < steps; i++) {
-    let face;
-    do {
-      face = Math.floor(Math.random() * 3);
-    } while (face === lastFace);
-    lastFace = face;
-    const fn = moveFns[face * 2 + Math.floor(Math.random() * 2)];
-    state = fn(state);
+    const candidates = SOLVER_MOVES.filter((m) => m.face !== lastFace);
+    const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+    lastFace = chosen.face;
+    state = chosen.fn(state);
   }
   stateToDomCube(state);
   updateCount(0);
@@ -471,6 +471,37 @@ function rotateBottomAnti(state) {
     state.substring(17, 18);
 }
 
+function rotateTopHalf(state) {
+  return rotateTopClock(rotateTopClock(state));
+}
+function rotateRightHalf(state) {
+  return rotateRightClock(rotateRightClock(state));
+}
+function rotateFrontHalf(state) {
+  return rotateFrontClock(rotateFrontClock(state));
+}
+
+// Standard WCA 2x2 generator set <U, R, F> in Half-Turn Metric (anchors DLB corner)
+const SOLVER_MOVES = [
+  { name: "U", face: "U", fn: rotateTopClock },
+  { name: "U'", face: "U", fn: rotateTopAnti },
+  { name: "U2", face: "U", fn: rotateTopHalf },
+  { name: "R", face: "R", fn: rotateRightClock },
+  { name: "R'", face: "R", fn: rotateRightAnti },
+  { name: "R2", face: "R", fn: rotateRightHalf },
+  { name: "F", face: "F", fn: rotateFrontClock },
+  { name: "F'", face: "F", fn: rotateFrontAnti },
+  { name: "F2", face: "F", fn: rotateFrontHalf },
+];
+
+function lastMoveFace(path) {
+  const trimmed = path.trim();
+  if (!trimmed) return "";
+  const lastSpace = trimmed.lastIndexOf(" ");
+  const token = lastSpace === -1 ? trimmed : trimmed.slice(lastSpace + 1);
+  return token[0];
+}
+
 var depthLimit = Number.MAX_SAFE_INTEGER;
 var maxVisited = Number.MAX_SAFE_INTEGER;
 
@@ -482,19 +513,12 @@ function recursiveDfs(start, end, visited, path, depth) {
   if (visited.has(start)) return false;
   visited.add(start);
 
-  var tmp = recursiveDfs(rotateBackClock(start), end, visited, path + " A", depth + 1);
-  if (tmp !== false) return tmp;
-  tmp = recursiveDfs(rotateTopClock(start), end, visited, path + " T", depth + 1);
-  if (tmp !== false) return tmp;
-  tmp = recursiveDfs(rotateLeftClock(start), end, visited, path + " L", depth + 1);
-  if (tmp !== false) return tmp;
-
-  tmp = recursiveDfs(rotateBackAnti(start), end, visited, path + " A'", depth + 1);
-  if (tmp !== false) return tmp;
-  tmp = recursiveDfs(rotateTopAnti(start), end, visited, path + " T'", depth + 1);
-  if (tmp !== false) return tmp;
-  tmp = recursiveDfs(rotateLeftAnti(start), end, visited, path + " L'", depth + 1);
-  if (tmp !== false) return tmp;
+  const prevFace = lastMoveFace(path);
+  for (const move of SOLVER_MOVES) {
+    if (move.face === prevFace) continue;
+    const tmp = recursiveDfs(move.fn(start), end, visited, path + " " + move.name, depth + 1);
+    if (tmp !== false) return tmp;
+  }
 
   return false;
 }
@@ -512,12 +536,11 @@ function search(start, end, breadthFirst) {
     visited.add(currentState);
     if (currentState === end) return currentPath.trim();
 
-    dq.push([rotateBackClock(currentState), currentPath + " A"]);
-    dq.push([rotateBackAnti(currentState), currentPath + " A'"]);
-    dq.push([rotateTopClock(currentState), currentPath + " T"]);
-    dq.push([rotateTopAnti(currentState), currentPath + " T'"]);
-    dq.push([rotateLeftClock(currentState), currentPath + " L"]);
-    dq.push([rotateLeftAnti(currentState), currentPath + " L'"]);
+    const prevFace = lastMoveFace(currentPath);
+    for (const move of SOLVER_MOVES) {
+      if (move.face === prevFace) continue;
+      dq.push([move.fn(currentState), currentPath + " " + move.name]);
+    }
   }
   return "unsolved";
 }
@@ -541,12 +564,11 @@ function asyncSearch(start, end, breadthFirst, callback) {
       return;
     }
 
-    dq.push([rotateBackClock(currentState), currentPath + " A"]);
-    dq.push([rotateBackAnti(currentState), currentPath + " A'"]);
-    dq.push([rotateTopClock(currentState), currentPath + " T"]);
-    dq.push([rotateTopAnti(currentState), currentPath + " T'"]);
-    dq.push([rotateLeftClock(currentState), currentPath + " L"]);
-    dq.push([rotateLeftAnti(currentState), currentPath + " L'"]);
+    const prevFace = lastMoveFace(currentPath);
+    for (const move of SOLVER_MOVES) {
+      if (move.face === prevFace) continue;
+      dq.push([move.fn(currentState), currentPath + " " + move.name]);
+    }
   };
 
   var runnerId, updaterId;
@@ -632,12 +654,11 @@ function asyncBiSearch(start, end, breadthFirst, callback, visited, otherVisited
       return;
     }
 
-    dq.push([rotateBackClock(currentState), currentPath + " A"]);
-    dq.push([rotateBackAnti(currentState), currentPath + " A'"]);
-    dq.push([rotateTopClock(currentState), currentPath + " T"]);
-    dq.push([rotateTopAnti(currentState), currentPath + " T'"]);
-    dq.push([rotateLeftClock(currentState), currentPath + " L"]);
-    dq.push([rotateLeftAnti(currentState), currentPath + " L'"]);
+    const prevFace = lastMoveFace(currentPath);
+    for (const move of SOLVER_MOVES) {
+      if (move.face === prevFace) continue;
+      dq.push([move.fn(currentState), currentPath + " " + move.name]);
+    }
   };
 
   var runnerId, updaterId;

@@ -24,56 +24,59 @@
 
     <div class="cube" id="startCube">
       <div></div>
-      <div class="face back" title="back side of cube">
-        <button class="cell blue" onclick="toggleColor(this)"> </button>
+      <div class="face back" title="Back (B) face">
+        <button class="cell blue fixed-cell" title="anchored DLB corner"> </button>
         <button class="cell blue" onclick="toggleColor(this)"> </button>
         <button class="cell blue" onclick="toggleColor(this)"> </button>
         <button class="cell blue" onclick="toggleColor(this)"> </button>
       </div>
       <div></div>
       <div></div>
-      <div class="face top" title="top side of cube">
+      <div class="face top" title="Up (U) face">
         <button class="cell yellow" onclick="toggleColor(this)"> </button>
         <button class="cell yellow" onclick="toggleColor(this)"> </button>
         <button class="cell yellow" onclick="toggleColor(this)"> </button>
         <button class="cell yellow" onclick="toggleColor(this)"> </button>
       </div>
       <div></div>
-      <div class="face left" title="left side of cube">
+      <div class="face left" title="Left (L) face">
         <button class="cell red" onclick="toggleColor(this)"> </button>
         <button class="cell red" onclick="toggleColor(this)"> </button>
-        <button class="cell red" onclick="toggleColor(this)"> </button>
+        <button class="cell red fixed-cell" title="anchored DLB corner"> </button>
         <button class="cell red" onclick="toggleColor(this)"> </button>
       </div>
-      <div class="face front" title="front side of cube">
+      <div class="face front" title="Front (F) face">
         <button class="cell green" onclick="toggleColor(this)"> </button>
         <button class="cell green" onclick="toggleColor(this)"> </button>
         <button class="cell green" onclick="toggleColor(this)"> </button>
-        <button class="cell green fixed-cell" title="anchored corner"> </button>
+        <button class="cell green" onclick="toggleColor(this)"> </button>
       </div>
-      <div class="face right" title="right side of cube">
+      <div class="face right" title="Right (R) face">
         <button class="cell orange" onclick="toggleColor(this)"> </button>
         <button class="cell orange" onclick="toggleColor(this)"> </button>
-        <button class="cell orange fixed-cell" title="anchored corner"> </button>
+        <button class="cell orange" onclick="toggleColor(this)"> </button>
         <button class="cell orange" onclick="toggleColor(this)"> </button>
       </div>
       <div></div>
-      <div class="face bottom" title="bottom side of cube">
+      <div class="face bottom" title="Down (D) face">
         <button class="cell white" onclick="toggleColor(this)"> </button>
-        <button class="cell white fixed-cell" title="anchored corner"> </button>
         <button class="cell white" onclick="toggleColor(this)"> </button>
+        <button class="cell white fixed-cell" title="anchored DLB corner"> </button>
         <button class="cell white" onclick="toggleColor(this)"> </button>
       </div>
       <div></div>
     </div>
 
     <div class="moves">
-      <button id="A" onclick="A()" title="rotate back side of cube clockwise">A</button>
-      <button id="Ap" onclick="Ap()" title="rotate back side of cube anticlockwise">A'</button>
-      <button id="T" onclick="T()" title="rotate top side of cube clockwise">T</button>
-      <button id="Tp" onclick="Tp()" title="rotate top side of cube anticlockwise">T'</button>
-      <button id="L" onclick="L()" title="rotate left side of cube clockwise">L</button>
-      <button id="Lp" onclick="Lp()" title="rotate left side of cube anticlockwise">L'</button>
+      <button id="U" onclick="U()" title="rotate Up (top) face clockwise">U</button>
+      <button id="Up" onclick="Up()" title="rotate Up (top) face counter-clockwise">U'</button>
+      <button id="U2" onclick="U2()" title="rotate Up (top) face 180 degrees">U2</button>
+      <button id="R" onclick="R()" title="rotate Right face clockwise">R</button>
+      <button id="Rp" onclick="Rp()" title="rotate Right face counter-clockwise">R'</button>
+      <button id="R2" onclick="R2()" title="rotate Right face 180 degrees">R2</button>
+      <button id="F" onclick="F()" title="rotate Front face clockwise">F</button>
+      <button id="Fp" onclick="Fp()" title="rotate Front face counter-clockwise">F'</button>
+      <button id="F2" onclick="F2()" title="rotate Front face 180 degrees">F2</button>
     </div>
   </main>
 
