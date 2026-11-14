@@ -3,6 +3,19 @@
   <button id="stopButton">Stop</button>
   <button onclick="scrambleCube()">Scramble</button>
   <button onclick="resetCube()">Reset</button>
+  <label class="control-field" for="algorithmSelect">
+    Algorithm:
+    <select id="algorithmSelect" onchange="onAlgorithmChange()">
+      <option value="bi-bfs">Bidirectional BFS (Optimal)</option>
+      <option value="bfs">Unidirectional BFS (Optimal)</option>
+      <option value="iddfs">Iterative Deepening DFS (Optimal)</option>
+      <option value="dfs">Depth-Limited DFS</option>
+    </select>
+  </label>
+  <label class="control-field" for="maxDepthInput">
+    Max Depth:
+    <input id="maxDepthInput" type="number" min="1" max="20" value="11" disabled>
+  </label>
 </div>
 <div class="status">
   <label id="validationStatus" class="valid">Valid cube state.</label>

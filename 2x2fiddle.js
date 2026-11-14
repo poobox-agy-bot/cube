@@ -2,7 +2,6 @@
 // looking at the green face, adjacent colors going clockwise are: y, o, w, r
 
 // TODO: https://twitter.com/i/status/1593771091738374144 is a better visualization.
-// TODO: inputs for DFS vs BFS and implement a depth limit for async iterative DFS.
 
 const solvedState = "byrbyoyrgygobrwbowrgwgow";
 
@@ -306,11 +305,21 @@ function init() {
   countElement = document.getElementById("counter");
   solutionElement = document.getElementById("solution");
   validationElement = document.getElementById("validationStatus");
+  onAlgorithmChange();
   refreshValidationStatus();
 }
 
-function updateCount(count) {
-  const label = "searched " + count + " unique states.";
+function onAlgorithmChange() {
+  const algoSelect = document.getElementById("algorithmSelect");
+  const depthInput = document.getElementById("maxDepthInput");
+  if (!algoSelect || !depthInput) return;
+  const usesDepth = algoSelect.value === "iddfs" || algoSelect.value === "dfs";
+  depthInput.disabled = !usesDepth;
+}
+
+function updateCount(count, extra = "") {
+  const suffix = extra ? " (" + extra + ")" : "";
+  const label = "searched " + count + " states" + suffix + ".";
   countElement.textContent = label;
   return count;
 }
@@ -747,6 +756,112 @@ function bidirectionalSearch(start, end, callback) {
   endIntervals[1] = e[1];
 }
 
+function asyncDepthSearch(start, end, maxDepth, iterative, callback) {
+  if (start === end) {
+    updateCount(1, "depth 0/" + maxDepth);
+    callback("");
+    return;
+  }
+
+  let currentLimit = iterative ? 1 : maxDepth;
+  let stack = [[start, "", 0]];
+  let minDepth = new Map();
+  let nodesExpanded = 0;
+  let found = false;
+  let result = null;
+  let exhausted = false;
+
+  const stepNode = function () {
+    while (stack.length === 0) {
+      if (!iterative || currentLimit >= maxDepth) {
+        exhausted = true;
+        return;
+      }
+      currentLimit++;
+      minDepth = new Map();
+      stack = [[start, "", 0]];
+    }
+
+    const [state, path, depth] = stack.pop();
+    if (state === end) {
+      result = path.trim();
+      found = true;
+      return;
+    }
+    if (depth >= currentLimit) return;
+
+    const prevDepth = minDepth.get(state);
+    if (prevDepth !== undefined && prevDepth <= depth) return;
+    minDepth.set(state, depth);
+    nodesExpanded++;
+
+    const prevFace = lastMoveFace(path);
+    for (let i = SOLVER_MOVES.length - 1; i >= 0; i--) {
+      const move = SOLVER_MOVES[i];
+      if (move.face === prevFace) continue;
+      stack.push([move.fn(state), path + " " + move.name, depth + 1]);
+    }
+  };
+
+  let runnerId, updaterId;
+  let runsPerInterval = 200;
+
+  const updater = function () {
+    updateCount(nodesExpanded, "depth " + currentLimit + "/" + maxDepth);
+  };
+
+  const runner = function () {
+    const sliceStart = performance.now();
+    for (let i = 0; i < runsPerInterval; i++) {
+      if (!found && !exhausted && !stop) {
+        stepNode();
+      } else {
+        clearInterval(runnerId);
+        clearInterval(updaterId);
+        updater();
+        callback(found ? result : null);
+        return;
+      }
+    }
+    const sliceMs = performance.now() - sliceStart;
+    if (sliceMs < 8 && runsPerInterval < 50000) {
+      runsPerInterval = Math.min(50000, Math.floor(runsPerInterval * 1.5));
+    } else if (sliceMs > 24 && runsPerInterval > 50) {
+      runsPerInterval = Math.max(50, Math.floor(runsPerInterval * 0.7));
+    }
+  };
+
+  updaterId = setInterval(updater, 250);
+  runnerId = setInterval(runner, 0);
+  activeTimers.push(updaterId, runnerId);
+}
+
+function getSelectedAlgorithm() {
+  const el = document.getElementById("algorithmSelect");
+  return el ? el.value : "bi-bfs";
+}
+
+function getSelectedMaxDepth() {
+  const el = document.getElementById("maxDepthInput");
+  const parsed = el ? parseInt(el.value, 10) : 11;
+  if (Number.isNaN(parsed)) return 11;
+  return Math.min(20, Math.max(1, parsed));
+}
+
+function formatSolutionResult(result, elapsed, maxDepth, usedDepthBound) {
+  if (result === null) {
+    if (stop) return "Search stopped.";
+    if (usedDepthBound) return "No solution found within depth " + maxDepth + " (" + elapsed + " ms).";
+    return "No solution found.";
+  }
+  if (result === "") {
+    return "Already solved! (0 moves, " + elapsed + " ms)";
+  }
+  const moveCount = result.trim().split(/\s+/).length;
+  const moveWord = moveCount === 1 ? "move" : "moves";
+  return "Solution (" + moveCount + " " + moveWord + "): " + result + " (" + elapsed + " ms)";
+}
+
 function runTest() {
   cancelActiveSearch();
   stop = false;
@@ -759,21 +874,29 @@ function runTest() {
     return;
   }
 
+  const algorithm = getSelectedAlgorithm();
+  const maxDepth = getSelectedMaxDepth();
+
   updateCount(0);
-  showSolution("");
+  showSolution("Searching...");
   var startTime = new Date();
 
-  bidirectionalSearch(state, solvedState, (result) => {
+  const onComplete = (result) => {
     const elapsed = new Date().getTime() - startTime.getTime();
-    if (result === null) {
-      showSolution(stop ? "Search stopped." : "No solution found.");
-    } else if (result === "") {
-      showSolution("Already solved! (0 moves, " + elapsed + " ms)");
-    } else {
-      showSolution("Solution: " + result + " (" + elapsed + " ms)");
-    }
+    const usedDepthBound = algorithm === "iddfs" || algorithm === "dfs";
+    showSolution(formatSolutionResult(result, elapsed, maxDepth, usedDepthBound));
     stop = false;
-  });
+  };
+
+  if (algorithm === "bfs") {
+    asyncSearch(state, solvedState, true, onComplete);
+  } else if (algorithm === "iddfs") {
+    asyncDepthSearch(state, solvedState, maxDepth, true, onComplete);
+  } else if (algorithm === "dfs") {
+    asyncDepthSearch(state, solvedState, maxDepth, false, onComplete);
+  } else {
+    bidirectionalSearch(state, solvedState, onComplete);
+  }
 }
 
 init();

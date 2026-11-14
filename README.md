@@ -13,4 +13,8 @@ Open `index.html` directly in any web browser (or serve the directory with `pyth
 - Interactive 2D unfolded cube net — click stickers to edit colors or use standard WCA Singmaster move controls (`U`, `U'`, `U2`, `R`, `R'`, `R2`, `F`, `F'`, `F2`), `Scramble`, and `Reset`
 - Complete mathematical Pocket Cube state validation (sticker counts, chiral corner cubie validity, anchored corner check, and corner twist mod-3 invariant)
 - Anchors the back-bottom-left (`DLB`) corner to eliminate whole-cube rotational symmetry while solving in Half-Turn Metric (`<U, R, F>`)
-- Browser-friendly non-blocking bidirectional BFS solver
+- Browser-friendly non-blocking solvers with UI selector:
+  - **Bidirectional BFS** (shortest path, meet-in-the-middle)
+  - **Unidirectional BFS** (shortest path)
+  - **Iterative Deepening DFS (IDDFS)** with configurable depth limit (shortest path, low memory)
+  - **Depth-Limited DFS** with configurable depth limit
